@@ -6,7 +6,7 @@ TensorRT speedup for EfficientDet models. The repo is based on https://github.co
 
 Speeding up the EfficientDet models with TensorRT is mainly composed of 3 steps:
 
-1. Modify original code to support TensorRT speedup (refer to [link](https://github.com/zylo117/Yet-Another-EfficientDet-Pytorch/issues/29#issuecomment-618904458))
+1. Modify original code to support TensorRT speedup (refer to [link](https://github.com/zylo117/Yet-Another-EfficientDet-Pytorch/issues/111#issuecomment-657422226) and [link](https://github.com/zylo117/Yet-Another-EfficientDet-Pytorch/issues/29#issuecomment-618904458))
 
 2. Convert Pytorch model to onnx file: `python torch2onnx.py`
 
