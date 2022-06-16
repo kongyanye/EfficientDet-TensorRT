@@ -18,7 +18,7 @@ obj_list = [
 ]
 
 compound_coef = 0
-input_size = 128
+input_size = 512
 batch_size = 1
 
 model = EfficientDetBackbone(compound_coef=compound_coef,

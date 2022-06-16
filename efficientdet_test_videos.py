@@ -17,7 +17,7 @@ from utils.utils import preprocess, invert_affine, postprocess, preprocess_video
 video_src = './nyc.mp4'  # set int to use webcam, set str to read from a video file
 
 compound_coef = 0
-force_input_size = 128  # set None to use default size
+force_input_size = 512  # set None to use default size
 
 threshold = 0.2
 iou_threshold = 0.2
@@ -100,7 +100,10 @@ while True:
 
     # model predict
     with torch.no_grad():
+        t1 = time.time()
         regression, classification, anchors = model(x)
+        t2 = time.time()
+        print(f'latency: {(t2-t1)*1000:.2f} ms')
         out = postprocess(1, regression, classification, anchors, regressBoxes, clipBoxes, threshold, iou_threshold)
 
     # result

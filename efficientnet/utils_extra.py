@@ -12,7 +12,7 @@ class Conv2dStaticSamePadding(nn.Module):
     The real keras/tensorflow conv2d with same padding
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, image_size=128, stride=1, bias=True, groups=1, dilation=1, **kwargs):
+    def __init__(self, in_channels, out_channels, kernel_size, image_size=512, stride=1, bias=True, groups=1, dilation=1, **kwargs):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
                               bias=bias, groups=groups)
@@ -65,7 +65,7 @@ class MaxPool2dStaticSamePadding(nn.Module):
     The real keras/tensorflow MaxPool2d with same padding
     """
 
-    def __init__(self, image_size=128, *args, **kwargs):
+    def __init__(self, image_size=512, *args, **kwargs):
         super().__init__()
         self.pool = nn.MaxPool2d(*args, **kwargs)
         self.stride = self.pool.stride

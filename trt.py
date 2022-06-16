@@ -12,7 +12,7 @@ from utils.utils import (invert_affine, postprocess, preprocess_video)
 
 
 class EfficientDet_TRT:
-    def __init__(self, engine_path='efficientdet-d0.trt', input_size=128):
+    def __init__(self, engine_path='efficientdet-d0.trt', input_size=512):
         self.engine_path = engine_path
         self.input_size = input_size
         self.threshold = 0.2
@@ -108,9 +108,9 @@ class EfficientDet_TRT:
         return regression_cpu, classification_cpu, anchors_cpu
 
     def postprocess(self, regression, classification, anchors):
-        regression = regression.reshape(1, 3069, 4)
-        classification = classification.reshape(1, 3069, 90)
-        anchors = anchors.reshape(1, 3069, 4)
+        regression = regression.reshape(1, 49104, 4)
+        classification = classification.reshape(1, 49104, 90)
+        anchors = anchors.reshape(1, 49104, 4)
 
         regression = torch.from_numpy(regression)
         classification = torch.from_numpy(classification)
