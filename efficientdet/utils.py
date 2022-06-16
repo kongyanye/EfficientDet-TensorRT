@@ -37,17 +37,19 @@ class BBoxTransform(nn.Module):
 
 class ClipBoxes(nn.Module):
 
-    def __init__(self):
+    def __init__(self, height, width):
         super(ClipBoxes, self).__init__()
+        self.height = height
+        self.width = width
 
-    def forward(self, boxes, img):
-        batch_size, num_channels, height, width = img.shape
+    def forward(self, boxes):
+        # batch_size, num_channels, height, width = img.shape
 
         boxes[:, :, 0] = torch.clamp(boxes[:, :, 0], min=0)
         boxes[:, :, 1] = torch.clamp(boxes[:, :, 1], min=0)
 
-        boxes[:, :, 2] = torch.clamp(boxes[:, :, 2], max=width - 1)
-        boxes[:, :, 3] = torch.clamp(boxes[:, :, 3], max=height - 1)
+        boxes[:, :, 2] = torch.clamp(boxes[:, :, 2], max=self.width - 1)
+        boxes[:, :, 3] = torch.clamp(boxes[:, :, 3], max=self.height - 1)
 
         return boxes
 
@@ -57,7 +59,7 @@ class Anchors(nn.Module):
     adapted and modified from https://github.com/google/automl/blob/master/efficientdet/anchors.py by Zylo117
     """
 
-    def __init__(self, anchor_scale=4., pyramid_levels=None, **kwargs):
+    def __init__(self, image_size=128, anchor_scale=4., pyramid_levels=None, **kwargs):
         super().__init__()
         self.anchor_scale = anchor_scale
 
@@ -72,6 +74,8 @@ class Anchors(nn.Module):
 
         self.last_anchors = {}
         self.last_shape = None
+
+        self.image_shape = image_size if isinstance(image_size, list) else [image_size, image_size]
 
     def forward(self, image, dtype=torch.float32):
         """Generates multiscale anchor boxes.
@@ -91,13 +95,13 @@ class Anchors(nn.Module):
         Raises:
           ValueError: input size must be the multiple of largest feature stride.
         """
-        image_shape = image.shape[2:]
+        # image_shape = image.shape[2:]
 
-        if image_shape == self.last_shape and image.device in self.last_anchors:
+        if self.image_shape == self.last_shape and image.device in self.last_anchors:
             return self.last_anchors[image.device]
 
-        if self.last_shape is None or self.last_shape != image_shape:
-            self.last_shape = image_shape
+        if self.last_shape is None or self.last_shape != self.image_shape:
+            self.last_shape = self.image_shape
 
         if dtype == torch.float16:
             dtype = np.float16
@@ -108,14 +112,14 @@ class Anchors(nn.Module):
         for stride in self.strides:
             boxes_level = []
             for scale, ratio in itertools.product(self.scales, self.ratios):
-                if image_shape[1] % stride != 0:
+                if self.image_shape[1] % stride != 0:
                     raise ValueError('input size must be divided by the stride.')
                 base_anchor_size = self.anchor_scale * stride * scale
                 anchor_size_x_2 = base_anchor_size * ratio[0] / 2.0
                 anchor_size_y_2 = base_anchor_size * ratio[1] / 2.0
 
-                x = np.arange(stride / 2, image_shape[1], stride)
-                y = np.arange(stride / 2, image_shape[0], stride)
+                x = np.arange(stride / 2, self.image_shape[1], stride)
+                y = np.arange(stride / 2, self.image_shape[0], stride)
                 xv, yv = np.meshgrid(x, y)
                 xv = xv.reshape(-1)
                 yv = yv.reshape(-1)

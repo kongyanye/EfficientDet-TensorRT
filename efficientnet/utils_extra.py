@@ -12,7 +12,7 @@ class Conv2dStaticSamePadding(nn.Module):
     The real keras/tensorflow conv2d with same padding
     """
 
-    def __init__(self, in_channels, out_channels, kernel_size, stride=1, bias=True, groups=1, dilation=1, **kwargs):
+    def __init__(self, in_channels, out_channels, kernel_size, image_size=128, stride=1, bias=True, groups=1, dilation=1, **kwargs):
         super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size, stride=stride,
                               bias=bias, groups=groups)
@@ -30,18 +30,30 @@ class Conv2dStaticSamePadding(nn.Module):
         elif len(self.kernel_size) == 1:
             self.kernel_size = [self.kernel_size[0]] * 2
 
-    def forward(self, x):
-        h, w = x.shape[-2:]
-        
+        h, w = image_size if isinstance(image_size, list) else [image_size, image_size]
         extra_h = (math.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
         extra_v = (math.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
-        
+
         left = extra_h // 2
         right = extra_h - left
         top = extra_v // 2
         bottom = extra_v - top
 
-        x = F.pad(x, [left, right, top, bottom])
+        self.static_padding = nn.ZeroPad2d((left, right, top, bottom))
+
+    def forward(self, x):
+        # h, w = x.shape[-2:]
+
+        # extra_h = (math.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
+        # extra_v = (math.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
+
+        # left = extra_h // 2
+        # right = extra_h - left
+        # top = extra_v // 2
+        # bottom = extra_v - top
+
+        # x = F.pad(x, [left, right, top, bottom])
+        x = self.static_padding(x)
 
         x = self.conv(x)
         return x
@@ -53,7 +65,7 @@ class MaxPool2dStaticSamePadding(nn.Module):
     The real keras/tensorflow MaxPool2d with same padding
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, image_size=128, *args, **kwargs):
         super().__init__()
         self.pool = nn.MaxPool2d(*args, **kwargs)
         self.stride = self.pool.stride
@@ -69,9 +81,7 @@ class MaxPool2dStaticSamePadding(nn.Module):
         elif len(self.kernel_size) == 1:
             self.kernel_size = [self.kernel_size[0]] * 2
 
-    def forward(self, x):
-        h, w = x.shape[-2:]
-        
+        h, w = image_size if isinstance(image_size, list) else [image_size, image_size]
         extra_h = (math.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
         extra_v = (math.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
 
@@ -79,8 +89,21 @@ class MaxPool2dStaticSamePadding(nn.Module):
         right = extra_h - left
         top = extra_v // 2
         bottom = extra_v - top
+        self.static_padding = nn.ZeroPad2d((left, right, top, bottom))
 
-        x = F.pad(x, [left, right, top, bottom])
+    def forward(self, x):
+        # h, w = x.shape[-2:]
+
+        # extra_h = (math.ceil(w / self.stride[1]) - 1) * self.stride[1] - w + self.kernel_size[1]
+        # extra_v = (math.ceil(h / self.stride[0]) - 1) * self.stride[0] - h + self.kernel_size[0]
+
+        # left = extra_h // 2
+        # right = extra_h - left
+        # top = extra_v // 2
+        # bottom = extra_v - top
+
+        # x = F.pad(x, [left, right, top, bottom])
+        self.static_padding(x)
 
         x = self.pool(x)
         return x

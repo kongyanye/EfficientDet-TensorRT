@@ -14,10 +14,10 @@ from efficientdet.utils import BBoxTransform, ClipBoxes
 from utils.utils import preprocess, invert_affine, postprocess, preprocess_video
 
 # Video's path
-video_src = 'videotest.mp4'  # set int to use webcam, set str to read from a video file
+video_src = './nyc.mp4'  # set int to use webcam, set str to read from a video file
 
 compound_coef = 0
-force_input_size = None  # set None to use default size
+force_input_size = 128  # set None to use default size
 
 threshold = 0.2
 iou_threshold = 0.2
@@ -60,31 +60,37 @@ def display(preds, imgs):
             return imgs[i]
 
         for j in range(len(preds[i]['rois'])):
-            (x1, y1, x2, y2) = preds[i]['rois'][j].astype(np.int)
-            cv2.rectangle(imgs[i], (x1, y1), (x2, y2), (255, 255, 0), 2)
-            obj = obj_list[preds[i]['class_ids'][j]]
             score = float(preds[i]['scores'][j])
+            if preds[i]['class_ids'][j]>3 or score < 0.5:
+                continue
+
+            (x1, y1, x2, y2) = preds[i]['rois'][j].astype(np.int)
+            cv2.rectangle(imgs[i], (x1, y1), (x2, y2), (0, 255, 255), 2)
+            obj = obj_list[preds[i]['class_ids'][j]]
 
             cv2.putText(imgs[i], '{}, {:.3f}'.format(obj, score),
                         (x1, y1 + 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                        (255, 255, 0), 1)
-        
+                        (0, 255, 255), 1)
+
         return imgs[i]
+
 # Box
 regressBoxes = BBoxTransform()
-clipBoxes = ClipBoxes()
+clipBoxes = ClipBoxes(input_size, input_size)
 
 # Video capture
 cap = cv2.VideoCapture(video_src)
+ind = 0
+# cap.set(cv2.CAP_PROP_POS_FRAMES, 1000)
 
 while True:
+    ind += 1
     ret, frame = cap.read()
     if not ret:
         break
 
     # frame preprocessing
     ori_imgs, framed_imgs, framed_metas = preprocess_video(frame, max_size=input_size)
-
     if use_cuda:
         x = torch.stack([torch.from_numpy(fi).cuda() for fi in framed_imgs], 0)
     else:
@@ -94,26 +100,20 @@ while True:
 
     # model predict
     with torch.no_grad():
-        features, regression, classification, anchors = model(x)
-
-        out = postprocess(x,
-                        anchors, regression, classification,
-                        regressBoxes, clipBoxes,
-                        threshold, iou_threshold)
+        regression, classification, anchors = model(x)
+        out = postprocess(1, regression, classification, anchors, regressBoxes, clipBoxes, threshold, iou_threshold)
 
     # result
     out = invert_affine(framed_metas, out)
     img_show = display(out, ori_imgs)
 
     # show frame by frame
-    cv2.imshow('frame',img_show)
-    if cv2.waitKey(1) & 0xFF == ord('q'): 
+    cv2.imshow('frame', img_show)
+    key = cv2.waitKey(1)
+    if key == ord('q'):
         break
+    elif key == 32:
+        cv2.waitKey(0)
 
 cap.release()
 cv2.destroyAllWindows()
-
-
-
-
-
